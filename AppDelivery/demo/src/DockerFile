@@ -1,0 +1,24 @@
+# Étape 1 : Utilisation d'une image de base contenant OpenJDK
+FROM openjdk:11-jdk-slim AS build
+
+# Étape 2 : Copier le fichier pom.xml et télécharger les dépendances
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Étape 3 : Copier le code source et compiler l'application
+COPY src /app/src
+RUN mvn clean package -DskipTests
+
+# Étape 4 : Utiliser une image plus légère pour l'exécution (openjdk:11)
+FROM openjdk:11-jre-slim
+
+# Étape 5 : Copier le JAR généré de l'étape de build
+WORKDIR /app
+COPY --from=build /app/target/your-app.jar /app/your-app.jar
+
+# Étape 6 : Définir le point d'entrée pour exécuter l'application
+ENTRYPOINT ["java", "-jar", "/app/your-app.jar"]
+
+# Exposer le port sur lequel l'application écoute
+EXPOSE 8080
